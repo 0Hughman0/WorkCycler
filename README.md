@@ -5,11 +5,11 @@ A simple program for working to a rest and work cycle. Utilising the PySide libr
 
 * Set how long you want to be working in total at the top
 * Set how long you want your segments of working time to be on the left
-* Then how long you want your resting periods to be on the right
+* Set how long you want your resting periods to be on the right
 * Check the box if you want each cycle to automatically loop round
 * Press start!
 
-An alarm tone will sound when it's time to rest, and a different alarm will sound when it's time to get back to work.
+Differing pop-ups and alarms will sound when it's time to stop and start working.
 
 # Installation:
 

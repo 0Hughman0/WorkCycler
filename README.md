@@ -2,6 +2,8 @@
 A simple program for working using the Pomodoro technique, or any other work and rest cycle for that matter!
 Also serving as an example PySide2 application.
 
+![WorkCycler](https://raw.githubusercontent.com/0Hughman0/WorkCycler/master/screenshots/Working.PNG)
+
 # Usage:
 
 * Set how long you want to be working in total at the top.
@@ -27,6 +29,6 @@ Other OS's or with Python
 * Clone this repository to your desired location
 * In your terminal of choice navigate to the WorkCycler folder
 * Use pipenv to setup your environment with `pipenv install`
-* Then simply run WorkCycler with `pipenv run work_cycler.pyw`
+* Then simply run WorkCycler with `pipenv run pythonw work_cycler.pyw`
 
 You can also make your own binary using something like pyinstaller, see `buildbin.bat` for recommended arguments.

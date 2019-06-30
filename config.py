@@ -1,6 +1,10 @@
 from PySide2 import QtGui, QtMultimedia
+import sys
 
-DEBUG = False
+if len(sys.argv) > 1 and '--dev' in sys.argv:
+    DEBUG = True
+else:
+    DEBUG = False
 
 DEFAULT_WORK_TIME = 25 * 60
 DEFAULT_REST_TIME = 5 * 60

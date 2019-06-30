@@ -56,6 +56,7 @@ class State:
 
     progress: float = 0.0
     view: views.View = views.READY
+    last_view: views.View = views.READY
 
     target_time: float = conf.DEFAULT_TARGET_TIME
     target_progress: float = 0.0
@@ -88,8 +89,10 @@ class State:
         with open(path) as file:
             save_dict = json.load(file)
             for attr in self.__savables__:
-                setattr(self, attr, save_dict[attr])
-    
+                val = save_dict.get(attr)
+                if val:
+                    setattr(self, attr, val)
+
     def save(self, path):
         with open(path, 'w') as file:
             json.dump({attr: value for attr, value
@@ -106,7 +109,10 @@ class Window(QMainWindow):
         self.state = State()
 
         if len(argv) > 1:
-            self.state.open(argv[1])
+            try:
+                self.state.open(argv[1])
+            except (FileNotFoundError):
+                self.state = State()
 
         Window.instance = self
 
@@ -221,6 +227,7 @@ class Window(QMainWindow):
         """
         Transition to a new view
         """
+        self.state.last_view = self.state.view
         self.state.view = view
 
         self.save_action.setDisabled(view.save_action.disabled)
@@ -340,10 +347,7 @@ class Window(QMainWindow):
     @views.PAUSED.modify_button.connect
     @transition
     def unpause(self):
-        if self.state.view is views.WORKING:
-            return views.WORKING
-        else:
-            return views.RESTING
+        return self.state.last_view
 
     @views.NEW_TARGET.modify_button.connect
     @transition

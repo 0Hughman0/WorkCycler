@@ -268,10 +268,13 @@ class Window(QMainWindow):
         alert.stop()
 
     def _update_progress(self):
-        progressage = self.state.progressage
-        if progressage:
-            self.progress_bar.setValue(progressage)
-        self.big_progress_bar.setValue(self.state.target_progressage)
+        progress, prog_percent = self.state.progress, self.state.progressage
+        self.progress_bar.setValue(prog_percent)
+        self.progress_bar.setToolTip(f'{prog_percent:.1f}% ({self.state.progress / 60:.0f} min)')
+
+        t_progress, t_prog_percent = self.state.target_progress, self.state.target_progressage
+        self.big_progress_bar.setValue(t_prog_percent)
+        self.big_progress_bar.setToolTip(f'{t_prog_percent:.1f}% ({t_progress / 60:.0f} min)')
 
     def _start_cycle(self, cycle):
         self.state.progress = 0.0
@@ -397,8 +400,10 @@ class DoCycleThread(QtCore.QThread):
                 self.done_target_sig.emit()
                 break
 
-            self.state.target_progress += conf.DELTA_T
             self.state.progress += conf.DELTA_T
+
+            if self.state.view is views.WORKING:
+                self.state.target_progress += conf.DELTA_T
 
             self.update_sig.emit()
 

@@ -61,6 +61,8 @@ class State:
     target_time: float = conf.DEFAULT_TARGET_TIME
     target_progress: float = 0.0
 
+    file: str = ''
+
     @property
     def progressage(self):
         if self.view is views.WORKING:
@@ -92,12 +94,14 @@ class State:
                 val = save_dict.get(attr)
                 if val:
                     setattr(self, attr, val)
+        self.file = path
 
     def save(self, path):
         with open(path, 'w') as file:
             json.dump({attr: value for attr, value
                        in self.__dict__.items()
                        if attr in self.__savables__}, file)
+        self.file = path
 
 
 class Window(QMainWindow):
@@ -111,7 +115,7 @@ class Window(QMainWindow):
         if len(argv) > 1:
             try:
                 self.state.open(argv[1])
-            except (FileNotFoundError):
+            except FileNotFoundError:
                 self.state = State()
 
         Window.instance = self
@@ -152,12 +156,17 @@ class Window(QMainWindow):
         file_menu = QMenu("File")
         menu_bar.addMenu(file_menu)
 
-        self.open_action = QAction("Open", self)
-        self.open_action.triggered.connect(self.open)
-        file_menu.addAction(self.open_action)
         self.save_action = QAction("Save", self)
         self.save_action.triggered.connect(self.save)
         file_menu.addAction(self.save_action)
+
+        self.save_as_action = QAction("Save As...", self)
+        self.save_as_action.triggered.connect(self.save_as)
+        file_menu.addAction(self.save_as_action)
+
+        self.open_action = QAction("Open...", self)
+        self.open_action.triggered.connect(self.open)
+        file_menu.addAction(self.open_action)
 
         space = QWidget()
         self.setCentralWidget(space)
@@ -232,6 +241,7 @@ class Window(QMainWindow):
 
         self.save_action.setDisabled(view.save_action.disabled)
         self.open_action.setDisabled(view.open_action.disabled)
+        self.save_as_action.setDisabled(view.save_action.disabled)
 
         self.message_box.setText(view.status)
         self.name_box.setDisabled(view.name_box.disabled)
@@ -293,15 +303,27 @@ class Window(QMainWindow):
     """
 
     def save(self):
+        if self.state.file:
+            self.state.save(self.state.file)
+        else:
+            self.save_as()
+
+    def save_as(self):
         self.state.name = self.name_box.text()
+        path = self.state.file if self.state.file else "{}.todo".format(self.state.name)
         filename, _ = QFileDialog.getSaveFileName(self,
-                                                  "Save Cycle", "{}.todo".format(self.state.name),
+                                                  caption="Save Cycle",
+                                                  dir=path,
                                                   filter='Todos (*.todo);; All files (*)')
         if filename:
             self.state.save(filename)
 
     def open(self):
-        filename, _ = QFileDialog.getOpenFileName(self, "Open Cyle", filter='Todos (*.todo);; All files (*)')
+        path = self.state.file if self.state.file else "{}.todo".format(self.state.name)
+        filename, _ = QFileDialog.getOpenFileName(self,
+                                                  "Open Cycle",
+                                                  filter='Todos (*.todo);; All files (*)',
+                                                  dir=path)
         if filename:
             self.state.open(filename)
 
@@ -313,6 +335,19 @@ class Window(QMainWindow):
         self.work_input.setTime(self.state.Qwork_time)
         self.rest_input.setTime(self.state.Qrest_time)
         self._update_progress()
+
+    def closeEvent(self, event):
+        if self.state.target_progress >= conf.MIN_WORTH_SAVING:
+            self.stop()
+            save = QMessageBox.question(self,
+                                        "Save Progress?",
+                                        f"You are {self.state.target_progress / 60:.0f} mins into "
+                                        f"'{self.state.name}', save progress before quiting?",
+                                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+            if save is QMessageBox.StandardButton.Yes:
+                self.save()
+            if save is QMessageBox.StandardButton.Cancel:
+                event.ignore()
 
     @views.READY.modify_button.connect
     @transition
